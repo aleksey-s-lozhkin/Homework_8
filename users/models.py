@@ -55,29 +55,29 @@ class User(AbstractUser):
     )
 
     phone = models.CharField(
-        _('телефон'), max_length=20, blank=True, null=True, help_text=_('Номер телефона пользователя')
+        _('телефон'), max_length=20, blank=True, null=True, help_text=_('Номер телефона')
     )
 
-    city = models.CharField(_('город'), max_length=100, blank=True, null=True, help_text=_('Город проживания'))
+    city = models.CharField(_('город'), max_length=100, blank=True, null=True, help_text=_('Город'))
 
     avatar = models.ImageField(
-        _('аватарка'), upload_to='avatars/', blank=True, null=True, help_text=_('Аватар пользователя')
+        _('аватарка'), upload_to='avatars/', blank=True, null=True, help_text=_('Аватар')
     )
 
     role = models.CharField(
-        _('роль'), max_length=20, choices=ROLE_CHOICES, default='user', help_text=_('Роль пользователя в системе')
+        _('роль'), max_length=20, choices=ROLE_CHOICES, default='user', help_text=_('Роль')
     )
 
     # Дополнительные поля
     about = models.TextField(
-        _('о себе'), max_length=500, blank=True, null=True, help_text=_('Краткая информация о пользователе')
+        _('о себе'), max_length=500, blank=True, null=True, help_text=_('Краткая информация')
     )
 
     date_of_birth = models.DateField(_('дата рождения'), blank=True, null=True)
 
     # Флаги
     is_verified = models.BooleanField(
-        _('подтвержден'), default=False, help_text=_('Подтвержден ли email пользователя')
+        _('подтвержден'), default=False, help_text=_('Подтвержден ли email')
     )
 
     # Настройки для авторизации
@@ -105,7 +105,7 @@ class User(AbstractUser):
             return self.email
 
     def get_avatar_url(self):
-        """Возвращает URL аватарки или дефолтное изображение"""
+        """Возвращает URL аватарки или изображение по умолчанию"""
         if self.avatar:
             return self.avatar.url
-        return '/static/images/default-avatar.png'
+        return '/static/images/default-avatar.webp'
