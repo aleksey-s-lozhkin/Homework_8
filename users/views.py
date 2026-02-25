@@ -1,11 +1,16 @@
-from rest_framework import generics, permissions, status, viewsets
-from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.filters import OrderingFilter
+from rest_framework.response import Response
 
-from .models import User, Payment
-from .serializers import UserCreateSerializer, UserProfileSerializer, UserProfileUpdateSerializer, UserSerializer, \
-    PaymentSerializer
+from .models import Payment, User
+from .serializers import (
+    PaymentSerializer,
+    UserCreateSerializer,
+    UserProfileSerializer,
+    UserProfileUpdateSerializer,
+    UserSerializer,
+)
 
 
 class UserCreateView(generics.CreateAPIView):
@@ -55,6 +60,7 @@ class UserListView(generics.ListAPIView):
 
 class PaymentViewSet(viewsets.ModelViewSet):
     """ViewSet для платежей с фильтрацией"""
+
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
