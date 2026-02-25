@@ -14,7 +14,8 @@ dependencies = [
     "load-dotenv (>=0.1.0,<0.2.0)",
     "python-dotenv (>=1.2.1,<2.0.0)",
     "pillow (>=12.1.1,<13.0.0)",
-    "djangorestframework-stubs (>=3.16.8,<4.0.0)"
+    "djangorestframework-stubs (>=3.16.8,<4.0.0)",
+    "django-filter (>=25.2,<26.0)"
 ]
 
 
