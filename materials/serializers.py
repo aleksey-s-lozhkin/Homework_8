@@ -31,7 +31,7 @@ class CourseSerializer(serializers.ModelSerializer):
     lessons_count = serializers.SerializerMethodField()
 
     # Поле для списка всех уроков курса
-    lessons = LessonSerializer(many=True, read_only=True, source='lessons.all')
+    lessons = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -52,5 +52,7 @@ class CourseSerializer(serializers.ModelSerializer):
         """Возвращает количество уроков в курсе"""
         return obj.lessons.count()
 
-
-
+    def get_lessons(self, obj):
+        """Возвращает только опубликованные уроки, отсортированные по порядку"""
+        lessons = obj.lessons.filter(is_published=True).order_by('order')
+        return LessonSerializer(lessons, many=True).data
