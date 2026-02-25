@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 
 
 class CustomUserManager(BaseUserManager):
@@ -109,3 +110,95 @@ class User(AbstractUser):
         if self.avatar:
             return self.avatar.url
         return '/static/images/default-avatar.webp'
+
+
+class Payment(models.Model):
+    """Модель платежа"""
+
+    # Способы оплаты
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Наличные'),
+        ('transfer', 'Перевод на счет'),
+    ]
+
+    # Пользователь, совершивший платеж
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='payments',
+        verbose_name=_('пользователь'),
+        help_text=_('Пользователь, совершивший платеж'),
+    )
+
+    # Дата оплаты
+    payment_date = models.DateTimeField(
+        _('дата оплаты'),
+        auto_now_add=True,
+        help_text=_('Дата и время совершения платежа'),
+    )
+
+    # Оплаченный курс (может быть пустым, если оплачен урок)
+    paid_course = models.ForeignKey(
+        'materials.Course',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payments',
+        verbose_name=_('оплаченный курс'),
+        help_text=_('Курс, который был оплачен'),
+    )
+
+    # Оплаченный урок (может быть пустым, если оплачен курс)
+    paid_lesson = models.ForeignKey(
+        'materials.Lesson',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payments',
+        verbose_name=_('оплаченный урок'),
+        help_text=_('Урок, который был оплачен'),
+    )
+
+    # Сумма платежа
+    amount = models.DecimalField(
+        _('сумма оплаты'),
+        max_digits=10,
+        decimal_places=2,
+        help_text=_('Сумма платежа'),
+    )
+
+    # Способ оплаты
+    payment_method = models.CharField(
+        _('способ оплаты'),
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        default='cash',
+        help_text=_('Способ оплаты: наличные или перевод на счет'),
+    )
+
+    class Meta:
+        verbose_name = _('Платеж')
+        verbose_name_plural = _('Платежи')
+        ordering = ['-payment_date']  # Сортировка от новых к старым
+
+    def __str__(self):
+        """Строковое представление платежа"""
+        paid_item = self.paid_course or self.paid_lesson
+        if paid_item:
+            return f"{self.user.email} - {paid_item.title} - {self.amount} руб."
+        return f"{self.user.email} - {self.amount} руб. (без привязки)"
+
+    def clean(self):
+        """Валидация: должен быть оплачен либо курс, либо урок"""
+        from django.core.exceptions import ValidationError
+
+        if not self.paid_course and not self.paid_lesson:
+            raise ValidationError(_('Должен быть указан либо оплаченный курс, либо оплаченный урок'))
+
+        if self.paid_course and self.paid_lesson:
+            raise ValidationError(_('Нельзя одновременно указать и курс, и урок'))
+
+    def save(self, *args, **kwargs):
+        """Переопределяем save для вызова валидации"""
+        self.clean()
+        super().save(*args, **kwargs)

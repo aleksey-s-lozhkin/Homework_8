@@ -5,11 +5,25 @@ from .models import Course, Lesson
 
 class CourseSerializer(serializers.ModelSerializer):
     """Сериализатор для курса"""
+    lessons_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'preview', 'description', 'owner', 'created_at', 'updated_at']
+        fields = [
+            'id',
+            'title',
+            'preview',
+            'description',
+            'owner',
+            'created_at',
+            'updated_at',
+            'lessons_count'
+        ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_lessons_count(self, obj):
+        """Возвращает количество уроков в курсе"""
+        return obj.lessons.count()
 
 
 class LessonSerializer(serializers.ModelSerializer):
