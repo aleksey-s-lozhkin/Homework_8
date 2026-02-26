@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 
-from .models import User
+from .models import Payment, User
 
 
 @admin.register(User)
@@ -36,3 +36,21 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     )
+
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'get_paid_item', 'amount', 'payment_method', 'payment_date')
+    list_filter = ('payment_method', 'payment_date')
+    search_fields = ('user__email',)
+    readonly_fields = ('payment_date',)
+
+    def get_paid_item(self, obj):
+        """Возвращает название оплаченного курса или урока"""
+        if obj.paid_course:
+            return f"Курс: {obj.paid_course.title}"
+        elif obj.paid_lesson:
+            return f"Урок: {obj.paid_lesson.title}"
+        return "—"
+
+    get_paid_item.short_description = _('Оплаченный товар')
