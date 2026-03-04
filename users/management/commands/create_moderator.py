@@ -1,7 +1,8 @@
-from django.core.management.base import BaseCommand
+from django.apps import apps
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from django.apps import apps
+from django.core.management.base import BaseCommand
+
 from users.models import User
 
 
@@ -43,10 +44,7 @@ class Command(BaseCommand):
         ]
 
         for codename, content_type in permissions:
-            perm, _ = Permission.objects.get_or_create(
-                codename=codename,
-                content_type=content_type
-            )
+            perm, _ = Permission.objects.get_or_create(codename=codename, content_type=content_type)
             moderator_group.permissions.add(perm)
             self.stdout.write(self.style.SUCCESS(f'Добавлено право: {codename}'))
 
@@ -59,8 +57,8 @@ class Command(BaseCommand):
                 'phone': '+7 (999) 888-77-66',
                 'city': 'Москва',
                 'role': 'moderator',
-                'is_verified': True
-            }
+                'is_verified': True,
+            },
         )
 
         if created:

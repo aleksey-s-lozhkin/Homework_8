@@ -1,16 +1,17 @@
-from rest_framework import generics, viewsets, permissions, status
-from rest_framework.response import Response
-from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.filters import OrderingFilter
+from rest_framework.response import Response
 
 from .models import Course, Lesson
+from .permissions import IsNotModerator, IsOwner, IsOwnerOrModerator
 from .serializers import CourseSerializer, LessonSerializer
-from .permissions import IsNotModerator, IsOwnerOrModerator, IsOwner
 
 
 class CourseViewSet(viewsets.ModelViewSet):
     """ViewSet для курса."""
+
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -73,6 +74,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
 class LessonListCreateView(generics.ListCreateAPIView):
     """Представление для списка и создания уроков"""
+
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
@@ -110,6 +112,7 @@ class LessonListCreateView(generics.ListCreateAPIView):
 
 class LessonRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     """Представление для просмотра, обновления и удаления урока"""
+
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
 

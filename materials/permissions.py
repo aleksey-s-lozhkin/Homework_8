@@ -3,8 +3,7 @@ from rest_framework import permissions
 
 class IsModerator(permissions.BasePermission):
     def has_permission(self, request, view):
-        return (request.user.is_authenticated and
-                request.user.groups.filter(name='moderators').exists())
+        return request.user.is_authenticated and request.user.groups.filter(name='moderators').exists()
 
 
 class IsNotModerator(permissions.BasePermission):
@@ -15,8 +14,8 @@ class IsNotModerator(permissions.BasePermission):
 
 
 class IsModeratorOrReadOnly(permissions.BasePermission):
-    """ Разрешение на изменение только для модераторов,
-    чтение доступно всем авторизованным пользователям """
+    """Разрешение на изменение только для модераторов,
+    чтение доступно всем авторизованным пользователям"""
 
     def has_permission(self, request, view):
         # Для безопасных методов (GET, HEAD, OPTIONS) разрешаем всем авторизованным
@@ -28,11 +27,11 @@ class IsModeratorOrReadOnly(permissions.BasePermission):
 
 
 class IsOwnerOrModerator(permissions.BasePermission):
-    """ Разрешение:
+    """Разрешение:
     - Чтение: все авторизованные
     - Изменение: владелец или модератор
     - Удаление: только владелец (модераторы не могут удалять)
-    - Создание: только обычные пользователи (не модераторы) """
+    - Создание: только обычные пользователи (не модераторы)"""
 
     def has_permission(self, request, view):
         # Все запросы требуют авторизации

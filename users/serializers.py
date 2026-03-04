@@ -42,6 +42,7 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
     Сериализатор для публичного просмотра профиля (чужие профили).
     Только общая информация, без чувствительных данных.
     """
+
     full_name = serializers.SerializerMethodField()
     courses_count = serializers.IntegerField(source='courses_owned.count', read_only=True)
     lessons_count = serializers.IntegerField(source='lessons_owned.count', read_only=True)
@@ -59,7 +60,7 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
             'role',
             'date_joined',
             'courses_count',
-            'lessons_count'
+            'lessons_count',
         ]
         read_only_fields = ['id', 'email', 'role', 'date_joined']
 
@@ -72,6 +73,7 @@ class PrivateUserProfileSerializer(serializers.ModelSerializer):
     Сериализатор для полного профиля (свой профиль).
     Включает все поля, включая чувствительные.
     """
+
     full_name = serializers.SerializerMethodField()
     payments = serializers.SerializerMethodField()
 
@@ -92,7 +94,7 @@ class PrivateUserProfileSerializer(serializers.ModelSerializer):
             'is_verified',
             'date_joined',
             'last_login',
-            'payments'
+            'payments',
         ]
         read_only_fields = ['id', 'email', 'role', 'is_verified', 'date_joined', 'last_login']
 
@@ -115,6 +117,7 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Просто наследуемся, ничего не меняем"""
+
     pass
 
 

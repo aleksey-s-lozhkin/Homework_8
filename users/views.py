@@ -1,25 +1,23 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, permissions, status, viewsets, serializers
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.filters import OrderingFilter
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-
 from .models import Payment, User
+from .permissions import IsOwnerOrReadOnly
 from .serializers import (
+    CustomTokenObtainPairSerializer,
     PaymentSerializer,
-    UserCreateSerializer,
-    PublicUserProfileSerializer,
     PrivateUserProfileSerializer,
+    PublicUserProfileSerializer,
+    UserBasicSerializer,
+    UserCreateSerializer,
     UserProfileUpdateSerializer,
     UserSerializer,
-    UserBasicSerializer,
-    CustomTokenObtainPairSerializer,
 )
-
-from .permissions import IsOwnerOrReadOnly
 
 
 class UserCreateView(generics.CreateAPIView):
@@ -38,6 +36,7 @@ class UserCreateView(generics.CreateAPIView):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     """Кастомный view для получения токена с доп. информацией"""
+
     serializer_class = CustomTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
@@ -46,10 +45,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         try:
             serializer.is_valid(raise_exception=True)
         except Exception:
-            return Response(
-                {"detail": "Неверные учетные данные"},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            return Response({"detail": "Неверные учетные данные"}, status=status.HTTP_401_UNAUTHORIZED)
 
         # Получаем стандартные токены
         tokens = serializer.validated_data
@@ -61,7 +57,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         response_data = {
             'access': tokens['access'],
             'refresh': tokens['refresh'],
-            'user': UserBasicSerializer(user).data
+            'user': UserBasicSerializer(user).data,
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -69,7 +65,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class UserDetailView(generics.RetrieveAPIView):
     """Просмотр профиля пользователя. Для своего профиля показывает полную информацию.
-    Для чужих профилей показывает только публичную информацию. """
+    Для чужих профилей показывает только публичную информацию."""
+
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated]
     lookup_field = 'id'
@@ -117,6 +114,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
 class CurrentUserView(APIView):
     """Получение данных текущего пользователя (полная информация)"""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -126,6 +124,7 @@ class CurrentUserView(APIView):
 
 class UserUpdateView(generics.UpdateAPIView):
     """Обновление профиля (только свой)"""
+
     queryset = User.objects.all()
     serializer_class = UserProfileUpdateSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
@@ -145,6 +144,7 @@ class UserUpdateView(generics.UpdateAPIView):
 
 class UserDeleteView(generics.DestroyAPIView):
     """Удаление пользователя (только свой профиль)"""
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
