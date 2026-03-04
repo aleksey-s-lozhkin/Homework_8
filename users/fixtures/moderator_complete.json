@@ -1,0 +1,39 @@
+[
+  {
+    "model": "auth.group",
+    "pk": 1,
+    "fields": {
+      "name": "moderators",
+      "permissions": [
+        ["view_course", "materials", "course"],
+        ["change_course", "materials", "course"],
+        ["view_lesson", "materials", "lesson"],
+        ["change_lesson", "materials", "lesson"]
+      ]
+    }
+  },
+  {
+    "model": "users.user",
+    "pk": 100,
+    "fields": {
+      "password": "pbkdf2_sha256$720000$4f7a2c8b9d3e5f1a$6e8b4a2c9d1f3e7a5b8c2d4f6a1e3c5b7d9f0a2e4c6b8d0f1a3e5c7b9d2f4a6c8e=",
+      "last_login": null,
+      "is_superuser": false,
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2026-03-05T12:00:00+03:00",
+      "email": "moderator@example.com",
+      "first_name": "Модератор",
+      "last_name": "Системный",
+      "phone": "+7 (999) 888-77-66",
+      "city": "Москва",
+      "avatar": null,
+      "role": "moderator",
+      "about": "Системный модератор платформы",
+      "date_of_birth": "1990-01-01",
+      "is_verified": true,
+      "groups": [1],
+      "user_permissions": []
+    }
+  }
+]
