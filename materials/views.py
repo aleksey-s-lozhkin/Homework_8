@@ -44,17 +44,10 @@ class CourseViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        """Фильтрация queryset в зависимости от роли"""
         user = self.request.user
-
-        if user.is_superuser or user.role == 'admin':
-            # Админ и суперпользователь видят все курсы
-            return Course.objects.all()
-        elif user.role == 'moderator':
-            # Модератор видит все курсы
+        if user.is_superuser or user.role == 'admin' or user.groups.filter(name='moderators').exists():
             return Course.objects.all()
         else:
-            # Обычный пользователь видит только свои курсы
             return Course.objects.filter(owner=user)
 
     def perform_create(self, serializer):
@@ -93,14 +86,10 @@ class LessonListCreateView(generics.ListCreateAPIView):
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        """Фильтрация queryset в зависимости от роли"""
         user = self.request.user
-
-        if user.is_superuser or user.role == 'admin' or user.role == 'moderator':
-            # Админ, суперпользователь и модератор видят все уроки
+        if user.is_superuser or user.role == 'admin' or user.groups.filter(name='moderators').exists():
             return Lesson.objects.all()
         else:
-            # Обычный пользователь видит только свои уроки
             return Lesson.objects.filter(owner=user)
 
     def perform_create(self, serializer):
@@ -136,10 +125,8 @@ class LessonRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        """Фильтрация queryset в зависимости от роли"""
         user = self.request.user
-
-        if user.is_superuser or user.role == 'admin' or user.role == 'moderator':
+        if user.is_superuser or user.role == 'admin' or user.groups.filter(name='moderators').exists():
             return Lesson.objects.all()
         else:
             return Lesson.objects.filter(owner=user)
