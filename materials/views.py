@@ -10,7 +10,7 @@ from .serializers import CourseSerializer, LessonSerializer
 
 
 class CourseViewSet(viewsets.ModelViewSet):
-    """ViewSet для курса."""
+    """ViewSet для курса"""
 
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
@@ -19,9 +19,8 @@ class CourseViewSet(viewsets.ModelViewSet):
     ordering_fields = ['title', 'created_at', 'updated_at']
 
     def get_permissions(self):
-        """
-        Настройка прав доступа в зависимости от действия
-        """
+        """Настройка прав доступа в зависимости от действия"""
+
         if self.action in ['list', 'retrieve']:
             # Просмотр списка и деталей доступен всем авторизованным
             permission_classes = [permissions.IsAuthenticated]

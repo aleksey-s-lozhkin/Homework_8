@@ -54,7 +54,7 @@ class Lesson(models.Model):
         max_length=500,
         blank=True,
         null=True,
-        help_text=_('Ссылка на видео (YouTube, Vimeo и т.д.)'),
+        help_text=_('Ссылка на видео (разрешен только YouTube)'),
     )
 
     course = models.ForeignKey(
