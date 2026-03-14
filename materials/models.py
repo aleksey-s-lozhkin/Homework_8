@@ -93,3 +93,38 @@ class Lesson(models.Model):
 
     def __str__(self):
         return f"{self.course.title} - {self.title}"
+
+
+class Subscription(models.Model):
+    """ Модель подписки пользователя на обновления курса """
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='subscriptions',
+        verbose_name='пользователь',
+        help_text='Пользователь, который подписался на обновления',
+    )
+
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='subscriptions',
+        verbose_name='курс',
+        help_text='Курс, на который подписан пользователь',
+    )
+
+    created_at = models.DateTimeField(
+        verbose_name='дата подписки',
+        auto_now_add=True,
+        help_text='Дата и время подписки',
+    )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        unique_together = ['user', 'course']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.email} подписан на {self.course.title}"
