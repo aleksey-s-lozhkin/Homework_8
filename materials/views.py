@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from .models import Course, Lesson, Subscription
 from .permissions import IsNotModerator, IsOwner, IsOwnerOrModerator
 from .serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer
+from .paginators import CoursePaginator, LessonsPagination
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -20,6 +21,7 @@ class CourseViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['title', 'owner']
     ordering_fields = ['title', 'created_at', 'updated_at']
+    pagination_class = CoursePaginator
 
     def get_permissions(self):
         """Настройка прав доступа в зависимости от действия"""
@@ -76,6 +78,7 @@ class LessonListCreateView(generics.ListCreateAPIView):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['title', 'course', 'owner', 'is_published']
     ordering_fields = ['title', 'order', 'created_at', 'updated_at']
+    pagination_class = LessonsPagination
 
     def get_permissions(self):
         """Настройка прав доступа"""
