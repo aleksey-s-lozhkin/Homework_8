@@ -1,16 +1,16 @@
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import OrderingFilter
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
 
 from .models import Course, Lesson, Subscription
+from .paginators import CoursePaginator, LessonsPagination
 from .permissions import IsNotModerator, IsOwner, IsOwnerOrModerator
 from .serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer
-from .paginators import CoursePaginator, LessonsPagination
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -158,7 +158,7 @@ class LessonRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class SubscriptionView(APIView):
-    """ Представление для управления подпиской пользователя на курс """
+    """Представление для управления подпиской пользователя на курс"""
 
     # Проверка авторизован ли пользователь
     permission_classes = [IsAuthenticated]
@@ -172,10 +172,7 @@ class SubscriptionView(APIView):
 
         course_id = request.data.get('course_id')
         if not course_id:
-            return Response(
-                {"error": "Не указан ID курса"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Не указан ID курса"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Получаем объект курса
         course = get_object_or_404(Course, id=course_id)

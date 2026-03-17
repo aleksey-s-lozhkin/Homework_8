@@ -1,15 +1,16 @@
-from rest_framework.serializers import ValidationError
 from urllib.parse import urlparse
+
+from rest_framework.serializers import ValidationError
 
 
 class VideoURLValidator:
-    """ Валидатор для проверки, что ссылка ведет только на YouTube """
+    """Валидатор для проверки, что ссылка ведет только на YouTube"""
 
     def __init__(self, field='video_url'):
         self.field = field  # Имя поля для возможных сообщений об ошибках
 
     def __call__(self, value):
-        """ Проверяет, что ссылка ведет только на YouTube """
+        """Проверяет, что ссылка ведет только на YouTube"""
 
         # Список разрешенных доменов YouTube
         allowed_domains = [
@@ -35,8 +36,9 @@ class VideoURLValidator:
         domain = parsed_url.netloc.lower().split(':')[0]
 
         # Проверяем, что домен входит в список разрешенных или является поддоменом разрешенного
-        if not any(allowed_domain == domain or domain.endswith('.' + allowed_domain)
-                  for allowed_domain in allowed_domains):
+        if not any(
+            allowed_domain == domain or domain.endswith('.' + allowed_domain) for allowed_domain in allowed_domains
+        ):
             raise ValidationError('Домен не разрешен. Разрешены только YouTube домены')
 
         # Возвращаем значение для дальнейшей обработки

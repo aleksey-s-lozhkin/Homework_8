@@ -1,10 +1,8 @@
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.response import Response
-from collections import OrderedDict
 
 
 class CoursePaginator(PageNumberPagination):
-    """ Пагинатор для списка курсов """
+    """Пагинатор для списка курсов"""
 
     # Количество курсов на странице по умолчанию
     page_size = 5
@@ -20,7 +18,7 @@ class CoursePaginator(PageNumberPagination):
 
 
 class LessonsPagination(PageNumberPagination):
-    """ Пагинатор для списка уроков """
+    """Пагинатор для списка уроков"""
 
     # Количество уроков на странице по умолчанию
     page_size = 10

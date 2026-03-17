@@ -1,8 +1,7 @@
-from django.template.context_processors import request
 from rest_framework import serializers
 
 from .models import Course, Lesson, Subscription
-from  .validators import VideoURLValidator
+from .validators import VideoURLValidator
 
 
 class LessonSerializer(serializers.ModelSerializer):
@@ -14,7 +13,7 @@ class LessonSerializer(serializers.ModelSerializer):
         allow_blank=True,
         allow_null=True,
         validators=[VideoURLValidator()],  # Валидатор на уровне поля
-        help_text="Ссылка на видео (только YouTube)"
+        help_text="Ссылка на видео (только YouTube)",
     )
 
     class Meta:
@@ -75,15 +74,13 @@ class CourseSerializer(serializers.ModelSerializer):
         return LessonSerializer(lessons, many=True).data
 
     def get_is_subscribed(self, object):
-        """ Проверяет подписан ли пользователь на этот курс """
+        """Проверяет подписан ли пользователь на этот курс"""
 
         request = self.context.get('request', None)
         if request and request.user.is_authenticated:
-            return Subscription.objects.filter(
-                user=request.user,
-                course=object
-            ).exists()
+            return Subscription.objects.filter(user=request.user, course=object).exists()
         return False
+
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     """Сериализатор для подписки"""

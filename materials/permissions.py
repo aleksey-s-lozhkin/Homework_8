@@ -3,14 +3,16 @@ from rest_framework import permissions
 
 class IsModerator(permissions.BasePermission):
     def has_permission(self, request, view):
-        return (request.user.is_authenticated and request.user.groups.filter(name='moderators').exists())
+        return request.user.is_authenticated and request.user.groups.filter(name='moderators').exists()
 
 
 class IsNotModerator(permissions.BasePermission):
     """Разрешение для всех, кроме модераторов"""
 
     def has_permission(self, request, view):
-        return (request.user.is_authenticated and not request.user.groups.filter(name='moderators').exists()) # Исправление
+        return (
+            request.user.is_authenticated and not request.user.groups.filter(name='moderators').exists()
+        )  # Исправление
 
 
 class IsModeratorOrReadOnly(permissions.BasePermission):
@@ -23,7 +25,7 @@ class IsModeratorOrReadOnly(permissions.BasePermission):
             return request.user.is_authenticated
 
         # Для остальных методов проверяем, является ли пользователь модератором
-        return (request.user.is_authenticated and request.user.groups.filter(name='moderators').exists()) # Исправление
+        return request.user.is_authenticated and request.user.groups.filter(name='moderators').exists()  # Исправление
 
 
 class IsOwnerOrModerator(permissions.BasePermission):
@@ -40,7 +42,7 @@ class IsOwnerOrModerator(permissions.BasePermission):
 
         # Для создания проверяем, что пользователь не модератор
         if request.method == 'POST':
-            return not request.user.groups.filter(name='moderators').exists() # Исправление
+            return not request.user.groups.filter(name='moderators').exists()  # Исправление
         # Для остальных методов разрешаем всем авторизованным
         # Детальная проверка будет в has_object_permission
         return True
@@ -54,7 +56,7 @@ class IsOwnerOrModerator(permissions.BasePermission):
         if request.method == 'DELETE':
             return obj.owner == request.user
         # Для изменения (PUT, PATCH) разрешаем владельцу или модератору
-        return (obj.owner == request.user or request.user.groups.filter(name='moderators').exists()) # Исправление
+        return obj.owner == request.user or request.user.groups.filter(name='moderators').exists()  # Исправление
 
 
 class IsOwner(permissions.BasePermission):
@@ -71,18 +73,24 @@ class IsAuthenticatedAndNotModerator(permissions.BasePermission):
     """Авторизованный пользователь, не являющийся модератором"""
 
     def has_permission(self, request, view):
-        return (request.user.is_authenticated and not request.user.groups.filter(name='moderators').exists()) # Исправление
+        return (
+            request.user.is_authenticated and not request.user.groups.filter(name='moderators').exists()
+        )  # Исправление
 
 
 class CanCreateCourse(permissions.BasePermission):
     """Может создавать курс (любой авторизованный, кроме модераторов)"""
 
     def has_permission(self, request, view):
-        return (request.user.is_authenticated and not request.user.groups.filter(name='moderators').exists()) # Исправление
+        return (
+            request.user.is_authenticated and not request.user.groups.filter(name='moderators').exists()
+        )  # Исправление
 
 
 class CanCreateLesson(permissions.BasePermission):
     """Может создавать урок (любой авторизованный, кроме модераторов)"""
 
     def has_permission(self, request, view):
-        return (request.user.is_authenticated and not request.user.groups.filter(name='moderators').exists()) # Исправление
+        return (
+            request.user.is_authenticated and not request.user.groups.filter(name='moderators').exists()
+        )  # Исправление

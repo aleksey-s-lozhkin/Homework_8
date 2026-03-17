@@ -1,15 +1,16 @@
-import sys
 import os
+import sys
+
 import django
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from rest_framework.test import APITestCase
-from rest_framework import status
-from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
 
 User = get_user_model()
 
@@ -21,27 +22,15 @@ class UserAPITestCase(APITestCase):
         """Заполнение базы тестовыми данными"""
         # Создаем пользователей
         self.admin_user = User.objects.create_superuser(
-            email='admin@example.com',
-            password='admin123',
-            first_name='Admin',
-            last_name='User',
-            role='admin'
+            email='admin@example.com', password='admin123', first_name='Admin', last_name='User', role='admin'
         )
 
         self.regular_user = User.objects.create_user(
-            email='user@example.com',
-            password='user123',
-            first_name='Regular',
-            last_name='User',
-            role='user'
+            email='user@example.com', password='user123', first_name='Regular', last_name='User', role='user'
         )
 
         self.other_user = User.objects.create_user(
-            email='other@example.com',
-            password='other123',
-            first_name='Other',
-            last_name='User',
-            role='user'
+            email='other@example.com', password='other123', first_name='Other', last_name='User', role='user'
         )
 
         # URL-ы
@@ -58,12 +47,7 @@ class UserAPITestCase(APITestCase):
 
     def test_user_can_register(self):
         """Тест: любой может зарегистрироваться"""
-        data = {
-            'email': 'new@example.com',
-            'password': 'new123',
-            'first_name': 'New',
-            'last_name': 'User'
-        }
+        data = {'email': 'new@example.com', 'password': 'new123', 'first_name': 'New', 'last_name': 'User'}
         response = self.client.post(self.register_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['email'], 'new@example.com')
@@ -132,7 +116,7 @@ class UserAPITestCase(APITestCase):
             self.user_detail_url,
             self.user_update_url,
             self.user_delete_url,
-            '/api/users/payments/'
+            '/api/users/payments/',
         ]
 
         for url in protected_urls:

@@ -36,7 +36,7 @@ python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 show_error_codes = true
-exclude = "venv/|.venv/|build/|dist/|.mypy_cache/"
+exclude = "venv/|.venv/|build/|dist/|.mypy_cache/|tests*"
 
 [[tool.mypy.overrides]]
 module = "tests.*"

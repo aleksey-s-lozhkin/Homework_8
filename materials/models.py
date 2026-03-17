@@ -96,7 +96,7 @@ class Lesson(models.Model):
 
 
 class Subscription(models.Model):
-    """ Модель подписки пользователя на обновления курса """
+    """Модель подписки пользователя на обновления курса"""
 
     user = models.ForeignKey(
         User,

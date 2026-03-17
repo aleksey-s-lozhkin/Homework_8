@@ -1,16 +1,18 @@
-import sys
 import os
+import sys
+
 import django
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from rest_framework.test import APITestCase
-from rest_framework import status
-from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
+
 from materials.models import Course, Lesson, Subscription
 
 User = get_user_model()
@@ -23,11 +25,7 @@ class CourseAPITestCase(APITestCase):
         """Заполнение базы тестовыми данными"""
         # Создаем пользователей с разными правами
         self.admin_user = User.objects.create_superuser(
-            email='admin@example.com',
-            password='admin123',
-            first_name='Admin',
-            last_name='User',
-            role='admin'
+            email='admin@example.com', password='admin123', first_name='Admin', last_name='User', role='admin'
         )
 
         self.moderator_user = User.objects.create_user(
@@ -35,7 +33,7 @@ class CourseAPITestCase(APITestCase):
             password='mod123',
             first_name='Moderator',
             last_name='User',
-            role='moderator'
+            role='moderator',
         )
 
         # Создаем группу модераторов и добавляем туда модератора
@@ -43,38 +41,24 @@ class CourseAPITestCase(APITestCase):
         self.moderator_user.groups.add(self.moderator_group)
 
         self.regular_user = User.objects.create_user(
-            email='user@example.com',
-            password='user123',
-            first_name='Regular',
-            last_name='User',
-            role='user'
+            email='user@example.com', password='user123', first_name='Regular', last_name='User', role='user'
         )
 
         self.other_user = User.objects.create_user(
-            email='other@example.com',
-            password='other123',
-            first_name='Other',
-            last_name='User',
-            role='user'
+            email='other@example.com', password='other123', first_name='Other', last_name='User', role='user'
         )
 
         # Создаем тестовые данные
         self.course = Course.objects.create(
-            title='Test Course',
-            description='Test Description',
-            owner=self.regular_user
+            title='Test Course', description='Test Description', owner=self.regular_user
         )
 
         self.other_course = Course.objects.create(
-            title='Other Course',
-            description='Other Description',
-            owner=self.other_user
+            title='Other Course', description='Other Description', owner=self.other_user
         )
 
         self.moderator_course = Course.objects.create(
-            title='Moderator Course',
-            description='Moderator Description',
-            owner=self.moderator_user
+            title='Moderator Course', description='Moderator Description', owner=self.moderator_user
         )
 
         # URL-ы
@@ -206,49 +190,28 @@ class LessonAPITestCase(APITestCase):
 
     def setUp(self):
         """Заполнение базы тестовыми данными"""
-        self.regular_user = User.objects.create_user(
-            email='user@example.com',
-            password='user123',
-            role='user'
-        )
+        self.regular_user = User.objects.create_user(email='user@example.com', password='user123', role='user')
 
-        self.moderator_user = User.objects.create_user(
-            email='mod@example.com',
-            password='mod123',
-            role='moderator'
-        )
+        self.moderator_user = User.objects.create_user(email='mod@example.com', password='mod123', role='moderator')
         self.moderator_group = Group.objects.create(name='moderators')
         self.moderator_user.groups.add(self.moderator_group)
 
-        self.other_user = User.objects.create_user(
-            email='other@example.com',
-            password='other123',
-            role='user'
-        )
+        self.other_user = User.objects.create_user(email='other@example.com', password='other123', role='user')
 
-        self.course = Course.objects.create(
-            title='Test Course',
-            owner=self.regular_user
-        )
+        self.course = Course.objects.create(title='Test Course', owner=self.regular_user)
 
-        self.other_course = Course.objects.create(
-            title='Other Course',
-            owner=self.other_user
-        )
+        self.other_course = Course.objects.create(title='Other Course', owner=self.other_user)
 
         self.lesson = Lesson.objects.create(
             title='Test Lesson',
             course=self.course,
             owner=self.regular_user,
             order=1,
-            video_url='https://www.youtube.com/watch?v=test'
+            video_url='https://www.youtube.com/watch?v=test',
         )
 
         self.other_lesson = Lesson.objects.create(
-            title='Other Lesson',
-            course=self.other_course,
-            owner=self.other_user,
-            order=1
+            title='Other Lesson', course=self.other_course, owner=self.other_user, order=1
         )
 
         self.list_url = reverse('lesson-list-create')
@@ -262,7 +225,7 @@ class LessonAPITestCase(APITestCase):
             'title': 'New Lesson',
             'course': self.course.id,
             'order': 2,
-            'video_url': 'https://www.youtube.com/watch?v=new'
+            'video_url': 'https://www.youtube.com/watch?v=new',
         }
         response = self.client.post(self.list_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -279,22 +242,14 @@ class LessonAPITestCase(APITestCase):
     def test_regular_user_cannot_create_lesson_in_others_course(self):
         """Тест: обычный пользователь не может создать урок в чужом курсе"""
         self.client.force_authenticate(user=self.regular_user)
-        data = {
-            'title': 'Invalid Lesson',
-            'course': self.other_course.id,
-            'order': 2
-        }
+        data = {'title': 'Invalid Lesson', 'course': self.other_course.id, 'order': 2}
         response = self.client.post(self.list_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_moderator_cannot_create_lesson(self):
         """Тест: модератор не может создать урок"""
         self.client.force_authenticate(user=self.moderator_user)
-        data = {
-            'title': 'Moderator Lesson',
-            'course': self.course.id,
-            'order': 3
-        }
+        data = {'title': 'Moderator Lesson', 'course': self.course.id, 'order': 3}
         response = self.client.post(self.list_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -324,25 +279,13 @@ class SubscriptionAPITestCase(APITestCase):
 
     def setUp(self):
         """Заполнение базы тестовыми данными"""
-        self.user1 = User.objects.create_user(
-            email='user1@example.com',
-            password='pass123'
-        )
+        self.user1 = User.objects.create_user(email='user1@example.com', password='pass123')
 
-        self.user2 = User.objects.create_user(
-            email='user2@example.com',
-            password='pass123'
-        )
+        self.user2 = User.objects.create_user(email='user2@example.com', password='pass123')
 
-        self.course1 = Course.objects.create(
-            title='Course 1',
-            owner=self.user1
-        )
+        self.course1 = Course.objects.create(title='Course 1', owner=self.user1)
 
-        self.course2 = Course.objects.create(
-            title='Course 2',
-            owner=self.user2
-        )
+        self.course2 = Course.objects.create(title='Course 2', owner=self.user2)
 
         self.enroll_url = reverse('subscription-enroll')
         self.my_subscriptions_url = reverse('user-subscriptions')
