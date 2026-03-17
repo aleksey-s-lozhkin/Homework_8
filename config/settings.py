@@ -1,16 +1,13 @@
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+sys.path.insert(0, str(BASE_DIR))
 load_dotenv()
-
-load_dotenv()
-
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
@@ -126,3 +123,8 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
+
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+TEST_DISCOVER_PATTERN = 'test*.py'
+TEST_DISCOVER_TOP_LEVEL = None
+TEST_DISCOVER_ROOT = None
