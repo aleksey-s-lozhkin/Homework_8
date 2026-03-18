@@ -45,7 +45,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -131,3 +131,6 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 TEST_DISCOVER_PATTERN = 'test*.py'
 TEST_DISCOVER_TOP_LEVEL = None
 TEST_DISCOVER_ROOT = None
+
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:8000')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')

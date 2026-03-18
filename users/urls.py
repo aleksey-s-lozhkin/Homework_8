@@ -19,4 +19,6 @@ urlpatterns = [
     path('users/<int:id>/delete/', views.UserDeleteView.as_view(), name='user-delete'),
     # Включаем URL от router
     path('', include(router.urls)),
+
+    path('payments/<int:payment_id>/status/', views.PaymentStatusView.as_view(), name='payment-status'),
 ]
