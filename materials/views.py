@@ -1,27 +1,31 @@
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import OrderingFilter
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import Course, Lesson
+from .models import Course, Lesson, Subscription
+from .paginators import CoursePaginator, LessonsPagination
 from .permissions import IsNotModerator, IsOwner, IsOwnerOrModerator
-from .serializers import CourseSerializer, LessonSerializer
+from .serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer
 
 
 class CourseViewSet(viewsets.ModelViewSet):
-    """ViewSet для курса."""
+    """ViewSet для курса"""
 
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['title', 'owner']
     ordering_fields = ['title', 'created_at', 'updated_at']
+    pagination_class = CoursePaginator
 
     def get_permissions(self):
-        """
-        Настройка прав доступа в зависимости от действия
-        """
+        """Настройка прав доступа в зависимости от действия"""
+
         if self.action in ['list', 'retrieve']:
             # Просмотр списка и деталей доступен всем авторизованным
             permission_classes = [permissions.IsAuthenticated]
@@ -52,6 +56,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """При создании курса устанавливаем владельца"""
+
         serializer.save(owner=self.request.user)
 
     def perform_update(self, serializer):
@@ -73,9 +78,11 @@ class LessonListCreateView(generics.ListCreateAPIView):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['title', 'course', 'owner', 'is_published']
     ordering_fields = ['title', 'order', 'created_at', 'updated_at']
+    pagination_class = LessonsPagination
 
     def get_permissions(self):
         """Настройка прав доступа"""
+
         if self.request.method == 'POST':
             # Создание доступно только обычным пользователям (не модераторам)
             permission_classes = [permissions.IsAuthenticated, IsNotModerator]
@@ -107,6 +114,7 @@ class LessonRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_permissions(self):
         """Настройка прав доступа"""
+
         if self.request.method in permissions.SAFE_METHODS:
             # Просмотр доступен всем авторизованным
             permission_classes = [permissions.IsAuthenticated]
@@ -133,6 +141,7 @@ class LessonRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
     def update(self, request, *args, **kwargs):
         """Обновление урока"""
+
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
@@ -142,6 +151,63 @@ class LessonRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
     def destroy(self, request, *args, **kwargs):
         """Удаление урока"""
+
         instance = self.get_object()
         self.perform_destroy(instance)
-        return Response({"detail": "Урок успешно удален"}, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SubscriptionView(APIView):
+    """Представление для управления подпиской пользователя на курс"""
+
+    # Проверка авторизован ли пользователь
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        # Получаем пользователя из запроса
+
+        user = request.user
+
+        # Получаем id курса из данных запроса
+
+        course_id = request.data.get('course_id')
+        if not course_id:
+            return Response({"error": "Не указан ID курса"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Получаем объект курса
+        course = get_object_or_404(Course, id=course_id)
+
+        # Проверяем, есть ли уже подписка
+        subscription = Subscription.objects.filter(user=user, course=course)
+
+        if subscription.exists():
+            # Если подписка есть - удаляем её
+            subscription.delete()
+            message = 'Подписка удалена'
+            is_subscribed = False
+            status_code = status.HTTP_200_OK
+        else:
+            # Если подписки нет - создаем новую
+            Subscription.objects.create(user=user, course=course)
+            message = 'Подписка добавлена'
+            is_subscribed = True
+            status_code = status.HTTP_201_CREATED
+
+        # Возвращаем ответ
+
+        return Response(
+            {"message": message, "is_subscribed": is_subscribed, "course_id": course_id}, status=status_code
+        )
+
+
+class UserSubscriptionsView(APIView):
+    """Представление для получения списка курсов, на которые подписан пользователь."""
+
+    # Проверка авторизован ли пользователь
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        subscriptions = Subscription.objects.filter(user=user)
+        serializer = SubscriptionSerializer(subscriptions, many=True)
+        return Response(serializer.data)

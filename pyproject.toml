@@ -16,7 +16,8 @@ dependencies = [
     "pillow (>=12.1.1,<13.0.0)",
     "djangorestframework-stubs (>=3.16.8,<4.0.0)",
     "django-filter (>=25.2,<26.0)",
-    "djangorestframework-simplejwt (>=5.5.1,<6.0.0)"
+    "djangorestframework-simplejwt (>=5.5.1,<6.0.0)",
+    "coverage (>=7.13.4,<8.0.0)"
 ]
 
 
@@ -35,7 +36,7 @@ python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 show_error_codes = true
-exclude = "venv/|.venv/|build/|dist/|.mypy_cache/"
+exclude = "venv/|.venv/|build/|dist/|.mypy_cache/|tests*"
 
 [[tool.mypy.overrides]]
 module = "tests.*"

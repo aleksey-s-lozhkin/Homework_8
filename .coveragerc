@@ -1,0 +1,36 @@
+[run]
+source = materials, users
+omit =
+    */migrations/*
+    */tests*
+    */test_*
+    */admin.py
+    */apps.py
+    manage.py
+    */__init__.py
+    */wsgi.py
+    */asgi.py
+    */management/commands/*
+    */management/commands/*.py
+    */management/*
+    *commands*
+    *create_moderator*
+    */users/management/commands/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    @abc.abstractmethod
+    @property
+    @abstractmethod
+
+[html]
+directory = htmlcov
+title = Coverage Report
