@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django_filters',
     'users',
     'materials',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -116,6 +117,8 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTAuthentication',),
+
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # Настройки срока действия токенов
