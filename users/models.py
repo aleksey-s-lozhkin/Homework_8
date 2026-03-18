@@ -166,43 +166,23 @@ class Payment(models.Model):
     )
 
     # Идентификатор продукта, созданного в Stripe (из объекта Product)
-    stripe_product_id = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name='ID продукта в Stripe'
-    )
+    stripe_product_id = models.CharField(max_length=255, blank=True, null=True, verbose_name='ID продукта в Stripe')
 
     # Идентификатор цены в Stripe (из объекта Price), связанной с продуктом
-    stripe_price_id = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name='ID цены в Stripe'
-    )
+    stripe_price_id = models.CharField(max_length=255, blank=True, null=True, verbose_name='ID цены в Stripe')
 
     # Идентификатор сессии Checkout в Stripe (из объекта Session)
-    stripe_session_id = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name='ID сессии в Stripe'
-    )
+    stripe_session_id = models.CharField(max_length=255, blank=True, null=True, verbose_name='ID сессии в Stripe')
 
     # Прямая ссылка на оплату, сгенерированная Stripe (поле url из объекта Session)
-    stripe_session_url = models.URLField(
-        max_length=500,
-        blank=True,
-        null=True,
-        verbose_name='Ссылка на оплату Stripe'
-    )
+    stripe_session_url = models.URLField(max_length=500, blank=True, null=True, verbose_name='Ссылка на оплату Stripe')
 
     # Статус платежа
     payment_status = models.CharField(
         max_length=20,
         choices=[('pending', 'Ожидает'), ('paid', 'Оплачен'), ('failed', 'Ошибка')],
         default='pending',
-        verbose_name='статус оплаты'
+        verbose_name='статус оплаты',
     )
 
     class Meta:

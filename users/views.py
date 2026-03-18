@@ -1,8 +1,7 @@
 import stripe
-from django.views.generic import TemplateView
-
-from django_filters.rest_framework import DjangoFilterBackend
 from django.conf import settings
+from django.views.generic import TemplateView
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
@@ -22,11 +21,10 @@ from .serializers import (
     UserProfileUpdateSerializer,
     UserSerializer,
 )
-
 from .services import (
+    create_stripe_checkout_session,
     create_stripe_price,
     create_stripe_product,
-    create_stripe_checkout_session,
 )
 
 
@@ -99,7 +97,7 @@ class UserListView(generics.ListAPIView):
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
-    """ViewSet для платежей с интеграцией Stripe """
+    """ViewSet для платежей с интеграцией Stripe"""
 
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
@@ -132,17 +130,11 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 product_name = "Оплата"
 
             # Создаём продукт в Stripe
-            product = create_stripe_product(
-                name=product_name,
-                metadata={'payment_id': payment.id}
-            )
+            product = create_stripe_product(name=product_name, metadata={'payment_id': payment.id})
             payment.stripe_product_id = product.id
 
             # Создаём цену
-            price = create_stripe_price(
-                amount=payment.amount,
-                product_id=product.id
-            )
+            price = create_stripe_price(amount=payment.amount, product_id=product.id)
             payment.stripe_price_id = price.id
 
             # Создаём сессию Checkout
@@ -154,10 +146,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
             print(f"DEBUG: cancel_url = {cancel_url}")
 
             session = create_stripe_checkout_session(
-                price_id=price.id,
-                success_url=success_url,
-                cancel_url=cancel_url,
-                metadata={'payment_id': payment.id}
+                price_id=price.id, success_url=success_url, cancel_url=cancel_url, metadata={'payment_id': payment.id}
             )
             payment.stripe_session_id = session.id
             payment.stripe_session_url = session.url
@@ -170,14 +159,11 @@ class PaymentViewSet(viewsets.ModelViewSet):
         except stripe.error.StripeError as e:
             payment.payment_status = 'failed'
             payment.save()
-            return Response(
-                {'error': f'Ошибка Stripe: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': f'Ошибка Stripe: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PaymentStatusView(APIView):
-    """ "Эндпоинт для получения актуального статуса платежа из Stripe """
+    """ "Эндпоинт для получения актуального статуса платежа из Stripe"""
 
     permission_classes = [IsAuthenticated]
 
@@ -185,15 +171,11 @@ class PaymentStatusView(APIView):
         try:
             payment = Payment.objects.get(id=payment_id, user=request.user)
         except Payment.DoesNotExist:
-            return Response(
-                {"error": "Платёж не найден"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Платёж не найден"}, status=status.HTTP_404_NOT_FOUND)
 
         if not payment.stripe_session_id:
             return Response(
-                {"error": "Для этого платежа не создана сессия Stripe"},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Для этого платежа не создана сессия Stripe"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         try:
@@ -205,10 +187,7 @@ class PaymentStatusView(APIView):
             payment.save()
             return Response({"status": payment.payment_status})
         except stripe.error.StripeError as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CurrentUserView(APIView):
@@ -251,7 +230,8 @@ class UserDeleteView(generics.DestroyAPIView):
 
 
 class PaymentSuccessView(TemplateView):
-    """ Страница успешной оплаты. Stripe перенаправляет пользователя сюда после успешного платежа. """
+    """Страница успешной оплаты. Stripe перенаправляет пользователя сюда после успешного платежа."""
+
     template_name = 'payment/success.html'
 
     def get_context_data(self, **kwargs):
@@ -262,7 +242,8 @@ class PaymentSuccessView(TemplateView):
 
 
 class PaymentCancelView(TemplateView):
-    """ Страница отмены оплаты. Stripe перенаправляет пользователя сюда, если он отменил платеж. """
+    """Страница отмены оплаты. Stripe перенаправляет пользователя сюда, если он отменил платеж."""
+
     template_name = 'payment/cancel.html'
 
     def get_context_data(self, **kwargs):
