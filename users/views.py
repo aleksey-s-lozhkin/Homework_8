@@ -117,7 +117,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Сохраняем платёж в БД (пока без Stripe-полей)
+        # Сохраняем платёж в БД
         payment = serializer.save(user=request.user)
 
         try:
@@ -140,10 +140,6 @@ class PaymentViewSet(viewsets.ModelViewSet):
             # Создаём сессию Checkout
             success_url = f"{settings.FRONTEND_URL}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
             cancel_url = f"{settings.FRONTEND_URL}/payment/cancel"
-
-            print(f"DEBUG: FRONTEND_URL = {settings.FRONTEND_URL}")
-            print(f"DEBUG: success_url = {success_url}")
-            print(f"DEBUG: cancel_url = {cancel_url}")
 
             session = create_stripe_checkout_session(
                 price_id=price.id, success_url=success_url, cancel_url=cancel_url, metadata={'payment_id': payment.id}
