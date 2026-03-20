@@ -142,5 +142,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             'amount',
             'payment_method',
             'get_payment_method_display',
+            'stripe_session_url',
+            'payment_status',
         ]
-        read_only_fields = ['id', 'payment_date']
+        read_only_fields = ['id', 'payment_date', 'user', 'stripe_session_url', 'payment_status']
