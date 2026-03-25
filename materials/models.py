@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from datetime import timedelta
+from django.utils import timezone
 
 from users.models import User
 
@@ -36,6 +38,25 @@ class Course(models.Model):
 
     def __str__(self):
         return self.title
+
+    last_notification_sent = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Время последнего уведомления',
+        help_text='Время последней отправки уведомления об обновлении'
+    )
+
+    def can_send_notification(self):
+        """Проверяет, можно ли отправлять уведомление"""
+        if self.last_notification_sent:
+            time_since_last = timezone.now() - self.last_notification_sent
+            return time_since_last >= timedelta(hours=4)
+        return True
+
+    def update_last_notification_time(self):
+        """Обновляет время последнего уведомления"""
+        self.last_notification_sent = timezone.now()
+        self.save(update_fields=['last_notification_sent'])
 
 
 class Lesson(models.Model):
