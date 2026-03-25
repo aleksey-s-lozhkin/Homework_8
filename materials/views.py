@@ -101,10 +101,7 @@ class CourseViewSet(viewsets.ModelViewSet):
                 users_data = []
                 for subscription in subscriptions:
                     user = subscription.user
-                    users_data.append({
-                        'email': user.email,
-                        'name': user.get_full_name() or user.username
-                    })
+                    users_data.append({'email': user.email, 'name': user.get_full_name() or user.username})
 
                 # Асинхронная рассылка
                 send_course_batch_updates.delay(instance.id, users_data)
