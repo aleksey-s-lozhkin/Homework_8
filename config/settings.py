@@ -3,6 +3,7 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 
+from celery.schedules import crontab
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,6 +26,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'django_filters',
+    'django_celery_beat',
     'users',
     'materials',
     'drf_spectacular',
@@ -133,3 +135,48 @@ TEST_DISCOVER_ROOT = None
 
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:8000')
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+
+# Настройки для Celery
+
+# URL-адрес брокера сообщений
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+# URL-адрес брокера результатов, также Redis
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+# Часовой пояс для работы Celery
+CELERY_TIMEZONE = "Europe/Moscow"
+# Флаг отслеживания выполнения задач
+CELERY_TASK_TRACK_STARTED = True
+# Максимальное время на выполнение задачи
+CELERY_TASK_TIME_LIMIT = 30 * 60
+# Настройки для Celery Beat
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+# Периодические задачи
+CELERY_BEAT_SCHEDULE = {
+    'deactivate-inactive-users': {
+        'task': 'materials.tasks.deactivate_inactive_users',
+        'schedule': crontab(hour=0, minute=0),  # Каждый день в полночь
+        'options': {
+            'expires': 3600,
+        },
+    },
+}
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Для отладки
+# EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend') # Для прода
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.yandex.ru')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 465))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'False') == 'True'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+
+CACHE_ENABLE = True if os.getenv('CACHE_ENABLE') == 'True' else False
+
+if CACHE_ENABLE:
+    CACHES = {
+        'default': {
+            'BACKEND': os.getenv('BACKEND'),
+            'LOCATION': os.getenv('LOCATION'),
+        }
+    }

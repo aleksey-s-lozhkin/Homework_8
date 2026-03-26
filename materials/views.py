@@ -11,6 +11,7 @@ from .models import Course, Lesson, Subscription
 from .paginators import CoursePaginator, LessonsPagination
 from .permissions import IsNotModerator, IsOwner, IsOwnerOrModerator
 from .serializers import CourseSerializer, LessonSerializer, SubscriptionSerializer
+from .tasks import send_course_batch_updates
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -68,6 +69,47 @@ class CourseViewSet(viewsets.ModelViewSet):
         """При удалении проверяем права"""
 
         instance.delete()
+
+    def update(self, request, *args, **kwargs):
+        """Обновление курса с рассылкой уведомлений"""
+
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+
+        # Сохраняем старые значения
+        old_title = instance.title
+        old_description = instance.description
+
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        # Проверяем, были ли изменения
+        has_changes = False
+        if 'title' in request.data and request.data['title'] != old_title:
+            has_changes = True
+        if 'description' in request.data and request.data['description'] != old_description:
+            has_changes = True
+
+        # Выполняем обновление
+        self.perform_update(serializer)
+
+        # Если были изменения и можно отправлять (прошло 4 часа)
+        if has_changes and instance.can_send_notification():
+            subscriptions = Subscription.objects.filter(course=instance)
+
+            if subscriptions.exists():
+                users_data = []
+                for subscription in subscriptions:
+                    user = subscription.user
+                    users_data.append({'email': user.email, 'name': user.get_full_name() or user.username})
+
+                # Асинхронная рассылка
+                send_course_batch_updates.delay(instance.id, users_data)
+
+                # Обновляем время последнего уведомления
+                instance.update_last_notification_time()
+
+        return Response(serializer.data)
 
 
 class LessonListCreateView(generics.ListCreateAPIView):
