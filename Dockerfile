@@ -16,8 +16,9 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock* ./
 
 # Устанавливаем зависимости без виртуального окружения
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi --no-root
+RUN poetry install --no-interaction --no-ansi --no-root || \
+    pip install django djangorestframework psycopg2-binary python-dotenv pillow \
+    django-filter djangorestframework-simplejwt drf-spectacular stripe celery redis django-celery-beat flower
 
 # Копируем весь проект
 COPY . .
