@@ -215,4 +215,4 @@ __marimo__/
 data/
 
 # Email files for development
-sent_emails/
+staticfiles/
