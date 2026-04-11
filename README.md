@@ -33,7 +33,7 @@ Django REST API платформа для онлайн-обучения с уп�
 - Redis (для Celery)
 - Аккаунт Stripe (для тестирования платежей)
 
-## Установка и запуск
+## Установка и запуск (Вариант 1)
 
 ### 1. Клонируйте репозиторий
 
@@ -54,40 +54,42 @@ poetry install
 
 ```ini
 # Django
-SECRET_KEY=your-secret-key-here
+SECRET_KEY=your-secret-key-here  # Сгенерируйте свой ключ
 DEBUG=True
 
 # Database
-DB_NAME=your_db_name
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_HOST=localhost
+DB_NAME=homework_8
+DB_USER=asl
+DB_PASSWORD=your_password_here  # Установите пароль для БД
+DB_HOST=localhost  # Для Docker используйте: db
 DB_PORT=5432
 
-# Celery & Redis
-CELERY_BROKER_URL=redis://localhost:6379/0
-CELERY_RESULT_BACKEND=redis://localhost:6379/0
-
-# Stripe
-STRIPE_SECRET_KEY=sk_test_...
-
-# Frontend URL (для редиректов после оплаты)
-FRONTEND_URL=http://localhost:8000
-
-# Email (опционально, для реальной рассылки)
-EMAIL_HOST=smtp.yandex.ru
-EMAIL_PORT=465
-EMAIL_USE_SSL=True
-EMAIL_HOST_USER=your-email@yandex.ru
-EMAIL_HOST_PASSWORD=your-password
-DEFAULT_FROM_EMAIL=your-email@yandex.ru
-
-# Кеширование (Redis)
+# Redis setting
 CACHE_ENABLE=True
 BACKEND=django.core.cache.backends.redis.RedisCache
-LOCATION=redis://127.0.0.1:6379/1
+LOCATION=redis://localhost:6379/1  # Для Docker: redis://redis:6379/1
 
-# Другие настройки
+# Celery & Redis
+CELERY_BROKER_URL=redis://localhost:6379/0  # Для Docker: redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0  # Для Docker: redis://redis:6379/0
+
+# Email settings (Yandex)
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.yandex.ru
+EMAIL_PORT=465
+EMAIL_USE_TLS=False
+EMAIL_USE_SSL=True
+EMAIL_HOST_USER=your-email@yandex.ru  # Укажите свой email
+EMAIL_HOST_PASSWORD=your-app-password  # Пароль приложения
+DEFAULT_FROM_EMAIL=your-email@yandex.ru
+
+# Frontend URL
+FRONTEND_URL=http://localhost:8000
+
+# Stripe
+STRIPE_SECRET_KEY=sk_test_...  # Ваш Stripe ключ
+
+# Other settings
 LANGUAGE_CODE=ru-ru
 TIME_ZONE=Europe/Moscow
 ```
@@ -121,17 +123,154 @@ poetry run celery -A config beat -l info
 ```
 > Примечание: Redis должен быть запущен локально или доступен по указанному адресу.
 
-## Тестирование
-Запуск всех тестов с покрытием:
+## Вариант 2: Запуск через Docker (рекомендуемый)
+### 1. Клонируйте репозиторий
+```bash
+git clone https://github.com/aleksey-s-lozhkin/Homework_8.git
+cd Homework_8
+```
+### 2. Настройте переменные окружения для Docker
+Скопируйте файл с примером переменных:
 
+```bash
+cp .env.example .env
+```
+Отредактируйте .env и укажите свои значения (особенно SECRET_KEY и STRIPE_SECRET_KEY):
+
+```env
+# Для Docker используйте имена сервисов вместо localhost
+DB_HOST=db                    # ← имя сервиса PostgreSQL
+DB_PORT=5432
+DB_NAME=homework_8
+DB_USER=asl
+DB_PASSWORD=your_password     # ← установите пароль
+
+# Redis для Docker
+LOCATION=redis://redis:6379/1  # ← имя сервиса Redis
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+# Остальные настройки
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+STRIPE_SECRET_KEY=sk_test_...
+FRONTEND_URL=http://localhost:8000
+```
+### 3. Запустите все сервисы
+```bash
+docker-compose up -d
+```
+Эта команда автоматически:
+
+- Создаст и запустит контейнеры: PostgreSQL, Redis, Django, Celery Worker, Celery Beat
+
+- Применит миграции
+
+- Соберет статические файлы
+
+### 4. Загрузите начальные данные
+```bash
+docker-compose exec web python manage.py loaddata users/fixtures/moderator_complete.json
+docker-compose exec web python manage.py loaddata users/fixtures/payments.json
+docker-compose exec web python manage.py loaddata materials/fixtures/initial_data.json
+```
+### 5. Создайте суперпользователя
+```bash
+docker-compose exec web python manage.py createsuperuser
+```
+### 6. Полезные команды Docker
+```bash
+# Просмотр логов
+docker-compose logs -f
+
+# Просмотр логов конкретного сервиса
+docker-compose logs -f web
+docker-compose logs -f celery
+
+# Остановка всех сервисов
+docker-compose stop
+
+# Запуск после остановки
+docker-compose start
+
+# Остановка и удаление контейнеров (данные сохраняются)
+docker-compose down
+
+# Полная очистка (удаляются все данные!)
+docker-compose down -v
+
+# Перезапуск с пересборкой образов
+docker-compose up -d --build
+
+# Выполнение команды в контейнере
+docker-compose exec web python manage.py migrate
+docker-compose exec web python manage.py test
+```
+### 7. Проверка работоспособности
+```bash
+# Проверка статуса контейнеров
+docker-compose ps
+
+# Проверка подключения к БД
+docker-compose exec web python manage.py dbshell
+
+# Проверка Redis
+docker-compose exec redis redis-cli ping
+# Должен ответить: PONG
+
+# Проверка Celery
+docker-compose exec celery celery -A config inspect ping
+```
+## Устранение проблем с Docker
+### Конфликт портов
+Если порты 5432 (PostgreSQL) или 6379 (Redis) уже заняты локальными сервисами:
+
+**Вариант 1:** Остановите локальные сервисы
+
+```bash
+# Linux (systemd)
+sudo systemctl stop postgresql redis
+
+# Mac (Homebrew)
+brew services stop postgresql redis
+
+# Windows (как администратор)
+# PostgreSQL:
+net stop postgresql
+# или
+pg_ctl -D "C:\Program Files\PostgreSQL\15\data" stop
+
+# Redis:
+net stop redis
+# или через диспетчер служб: services.msc
+```
+**Вариант 2:** Измените порты в docker-compose.yml
+
+```yaml
+ports:
+  - "5433:5432"  # PostgreSQL на порту 5433
+  - "6380:6379"  # Redis на порту 6380
+```
+### Ошибка подключения к БД
+Убедитесь, что в .env указан DB_HOST=db (не localhost).
+
+## Тестирование
+### Локальное тестирование
 ```bash
 poetry run pytest
 ```
-Или через coverage (настроено в pyproject.toml):
-
+### Тестирование в Docker
+```bash
+docker-compose exec web pytest
+```
+### С покрытием кода
 ```bash
 poetry run coverage run manage.py test
 poetry run coverage report
+
+# В Docker
+docker-compose exec web coverage run manage.py test
+docker-compose exec web coverage report
 ```
 
 ## Документация API
@@ -208,6 +347,10 @@ Homework_8/
 ├── media/                  # Загружаемые файлы (аватарки, превью)
 ├── templates/              # HTML-шаблоны (уведомления, страницы оплаты)
 ├── .env.example            # Пример файла с переменными окружения
+├── .env                    # Файл с переменными (не коммитится)
+├── Dockerfile              # Инструкция для сборки Docker-образа
+├── docker-compose.yml      # Оркестрация сервисов
+├── .dockerignore           # Файлы, исключаемые из Docker-образа
 ├── pyproject.toml          # Зависимости и настройки Poetry
 └── manage.py
 ```
