@@ -36,6 +36,7 @@ jobs:
       - name: Run tests
         run: poetry run python manage.py test
         env:
+          SECRET_KEY: 'test-secret-key-for-ci-12345'
           DEBUG: '1'
           DB_ENGINE: django.db.backends.sqlite3
           DB_NAME: ':memory:'
