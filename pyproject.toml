@@ -1,42 +1,41 @@
-[project]
+[tool.poetry]
 name = "homework-8"
 version = "0.1.0"
-description = ""
-authors = [
-    {name = "Aleksey Lozhkin",email = "aleksey.s.lozhkin@gmail.com"}
-]
+description = "Платформа онлайн-обучения"
+authors = ["Aleksey Lozhkin <aleksey.s.lozhkin@gmail.com>"]
 readme = "README.md"
-requires-python = ">=3.12,<4.0"
-dependencies = [
-    "django (>=6.0.2,<7.0.0)",
-    "djangorestframework (>=3.16.1,<4.0.0)",
-    "psycopg2-binary (>=2.9.11,<3.0.0)",
-    "load-dotenv (>=0.1.0,<0.2.0)",
-    "python-dotenv (>=1.2.1,<2.0.0)",
-    "pillow (>=12.1.1,<13.0.0)",
-    "djangorestframework-stubs (>=3.16.8,<4.0.0)",
-    "django-filter (>=25.2,<26.0)",
-    "djangorestframework-simplejwt (>=5.5.1,<6.0.0)",
-    "coverage (>=7.13.4,<8.0.0)",
-    "drf-spectacular (>=0.29.0,<0.30.0)",
-    "stripe (>=14.4.1,<15.0.0)",
-    "celery (>=5.6.2,<6.0.0)",
-    "redis (>=7.3.0,<8.0.0)",
-    "django-celery-beat (>=2.9.0,<3.0.0)",
-    "celery-types (>=0.26.0,<0.27.0)",
-    "gunicorn (>=25.3.0,<26.0.0)"
-]
 
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+django = ">=6.0.2,<7.0.0"
+djangorestframework = ">=3.16.1,<4.0.0"
+psycopg2-binary = ">=2.9.11,<3.0.0"
+python-dotenv = ">=1.2.1,<2.0.0"
+pillow = ">=12.1.1,<13.0.0"
+django-filter = ">=25.2,<26.0"
+djangorestframework-simplejwt = ">=5.5.1,<6.0.0"
+coverage = ">=7.13.4,<8.0.0"
+drf-spectacular = ">=0.29.0,<0.30.0"
+stripe = ">=14.4.1,<15.0.0"
+celery = ">=5.6.2,<6.0.0"
+redis = ">=7.3.0,<8.0.0"
+django-celery-beat = ">=2.9.0,<3.0.0"
+celery-types = ">=0.26.0,<0.27.0"
+gunicorn = ">=25.3.0,<26.0.0"
 
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-django = "^4.8.0"
 
 [tool.poetry.group.lint.dependencies]
 flake8 = "^7.3.0"
 mypy = "^1.17.0"
 black = "^25.1.0"
 isort = "^6.0.1"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
 python_version = "3.12"
@@ -72,9 +71,6 @@ exclude = '''
 profile = "black"
 line_length = 119
 skip = [".venv", "venv"]
-
-[tool.poetry.scripts]
-export-requirements = "poetry export -f requirements.txt --output requirements.txt --without-hashes"
 
 [tool.pytest.ini_options]
 addopts = "--cov=src --cov-report=html --cov-report=term --cov-fail-under=80"
