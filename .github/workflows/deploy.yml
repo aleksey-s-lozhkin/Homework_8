@@ -36,7 +36,7 @@ jobs:
       - name: Run tests
         run: poetry run python manage.py test
         env:
-          SECRET_KEY: 'test-secret-key'
+          SECRET_KEY: 'test-secret-key-for-ci'
           DEBUG: '1'
           DB_ENGINE: django.db.backends.sqlite3
           DB_NAME: ':memory:'
@@ -72,11 +72,15 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 20m
           script: |
+            set -e  # Останавливаемся при любой ошибке
+            
+            # Создаём директорию
             mkdir -p /home/${{ secrets.SERVER_USER }}/homework8/nginx
             cd /home/${{ secrets.SERVER_USER }}/homework8
-
-            # Создаем .env
+            
+            # Создаём .env
             cat > .env << 'EOF'
             SECRET_KEY='${{ secrets.SECRET_KEY }}'
             ALLOWED_HOSTS='${{ secrets.ALLOWED_HOSTS }}'
@@ -85,8 +89,8 @@ jobs:
             EMAIL_HOST_USER='${{ secrets.EMAIL_HOST_USER }}'
             EMAIL_HOST_PASSWORD='${{ secrets.EMAIL_HOST_PASSWORD }}'
             EOF
-
-            # Создаем nginx.conf
+            
+            # Создаём nginx.conf
             cat > nginx/nginx.conf << 'EOF'
             server {
                 listen 80;
@@ -110,15 +114,15 @@ jobs:
                 }
             }
             EOF
-
-            # Создаем nginx/Dockerfile
+            
+            # Создаём nginx/Dockerfile
             cat > nginx/Dockerfile << 'EOF'
             FROM nginx:alpine
             COPY nginx.conf /etc/nginx/conf.d/default.conf
             EXPOSE 80
             EOF
-
-            # Создаем docker-compose.yml
+            
+            # Создаём docker-compose.yml
             cat > docker-compose.yml << 'EOF'
             services:
               db:
@@ -126,7 +130,7 @@ jobs:
                 environment:
                   POSTGRES_DB: homework_8
                   POSTGRES_USER: asl
-                  POSTGRES_PASSWORD: '${{ secrets.DB_PASSWORD }}'
+                  POSTGRES_PASSWORD: '${DB_PASSWORD}'
                 volumes:
                   - postgres_data:/var/lib/postgresql/data
                 healthcheck:
@@ -154,19 +158,19 @@ jobs:
                   - "8000"
                 environment:
                   DEBUG: 'False'
-                  SECRET_KEY: '${{ secrets.SECRET_KEY }}'
-                  ALLOWED_HOSTS: '${{ secrets.ALLOWED_HOSTS }}'
+                  SECRET_KEY: '${SECRET_KEY}'
+                  ALLOWED_HOSTS: '${ALLOWED_HOSTS}'
                   DB_NAME: homework_8
                   DB_USER: asl
-                  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'
+                  DB_PASSWORD: '${DB_PASSWORD}'
                   DB_HOST: db
                   DB_PORT: 5432
                   REDIS_URL: redis://redis:6379/0
                   CELERY_BROKER_URL: redis://redis:6379/0
                   CELERY_RESULT_BACKEND: redis://redis:6379/0
-                  STRIPE_SECRET_KEY: '${{ secrets.STRIPE_SECRET_KEY }}'
-                  EMAIL_HOST_USER: '${{ secrets.EMAIL_HOST_USER }}'
-                  EMAIL_HOST_PASSWORD: '${{ secrets.EMAIL_HOST_PASSWORD }}'
+                  STRIPE_SECRET_KEY: '${STRIPE_SECRET_KEY}'
+                  EMAIL_HOST_USER: '${EMAIL_HOST_USER}'
+                  EMAIL_HOST_PASSWORD: '${EMAIL_HOST_PASSWORD}'
                 volumes:
                   - static_volume:/app/staticfiles
                   - media_volume:/app/media
@@ -180,7 +184,7 @@ jobs:
               nginx:
                 build: ./nginx
                 ports:
-                  - "80:80"
+                  - "8080:80"
                 volumes:
                   - static_volume:/staticfiles
                   - media_volume:/media
@@ -193,10 +197,10 @@ jobs:
                 command: celery -A config worker -l info
                 environment:
                   DEBUG: 'False'
-                  SECRET_KEY: '${{ secrets.SECRET_KEY }}'
+                  SECRET_KEY: '${SECRET_KEY}'
                   DB_NAME: homework_8
                   DB_USER: asl
-                  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'
+                  DB_PASSWORD: '${DB_PASSWORD}'
                   DB_HOST: db
                   DB_PORT: 5432
                   REDIS_URL: redis://redis:6379/0
@@ -214,10 +218,10 @@ jobs:
                 command: celery -A config beat -l info
                 environment:
                   DEBUG: 'False'
-                  SECRET_KEY: '${{ secrets.SECRET_KEY }}'
+                  SECRET_KEY: '${SECRET_KEY}'
                   DB_NAME: homework_8
                   DB_USER: asl
-                  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'
+                  DB_PASSWORD: '${DB_PASSWORD}'
                   DB_HOST: db
                   DB_PORT: 5432
                   REDIS_URL: redis://redis:6379/0
@@ -249,13 +253,20 @@ jobs:
               static_volume:
               media_volume:
             EOF
-
+            
             # Запускаем контейнеры
-            docker-compose pull
-            docker-compose up -d --build
-
-            sleep 15
-            docker-compose exec -T web python manage.py migrate --noinput || true
-            docker-compose exec -T web python manage.py collectstatic --noinput || true
-
-            docker image prune -f
+            docker compose down -v 2>/dev/null || true
+            docker compose up -d
+            
+            # Ждём запуска
+            sleep 20
+            
+            # Применяем миграции
+            docker compose exec -T web python manage.py migrate --noinput || true
+            
+            # Собираем статику
+            docker compose exec -T web python manage.py collectstatic --noinput || true
+            
+            # Проверяем, что всё работает
+            docker compose ps
+            curl -I http://localhost:8080/api/docs/ || true
