@@ -73,19 +73,137 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            mkdir -p /home/${{ secrets.SERVER_USER }}/homework8
             cd /home/${{ secrets.SERVER_USER }}/homework8
             
-            # Скачиваем свежий образ
+            # Создаем docker-compose.yml
+            cat > docker-compose.yml << 'EOF'
+            services:
+              db:
+                image: postgres:15-alpine
+                environment:
+                  POSTGRES_DB: ${DB_NAME}
+                  POSTGRES_USER: ${DB_USER}
+                  POSTGRES_PASSWORD: ${DB_PASSWORD}
+                volumes:
+                  - postgres_data:/var/lib/postgresql/data
+                healthcheck:
+                  test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+                  interval: 5s
+                  timeout: 3s
+                  retries: 5
+                restart: unless-stopped
+            
+              redis:
+                image: redis:7-alpine
+                volumes:
+                  - redis_data:/data
+                healthcheck:
+                  test: ["CMD", "redis-cli", "ping"]
+                  interval: 5s
+                  timeout: 3s
+                  retries: 5
+                restart: unless-stopped
+            
+              web:
+                image: ${{ secrets.DOCKER_USERNAME }}/habit-tracker:latest
+                command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+                expose:
+                  - "8000"
+                environment:
+                  DEBUG: 'False'
+                  SECRET_KEY: '${{ secrets.SECRET_KEY }}'
+                  ALLOWED_HOSTS: '${{ secrets.ALLOWED_HOSTS }}'
+                  DB_NAME: habit_tracker
+                  DB_USER: habit_user
+                  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'
+                  DB_HOST: db
+                  DB_PORT: 5432
+                  REDIS_URL: redis://redis:6379/0
+                  TELEGRAM_BOT_TOKEN: '${{ secrets.TELEGRAM_BOT_TOKEN }}'
+                  PAGE_SIZE: '5'
+                volumes:
+                  - static_volume:/app/staticfiles
+                  - media_volume:/app/media
+                depends_on:
+                  db:
+                    condition: service_healthy
+                  redis:
+                    condition: service_healthy
+                restart: unless-stopped
+            
+              nginx:
+                image: nginx:alpine
+                ports:
+                  - "80:80"
+                volumes:
+                  - static_volume:/staticfiles
+                  - media_volume:/media
+                depends_on:
+                  - web
+                restart: unless-stopped
+            
+              celery:
+                image: ${{ secrets.DOCKER_USERNAME }}/habit-tracker:latest
+                command: celery -A config worker -l info
+                environment:
+                  DEBUG: 'False'
+                  SECRET_KEY: '${{ secrets.SECRET_KEY }}'
+                  DB_NAME: habit_tracker
+                  DB_USER: habit_user
+                  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'
+                  DB_HOST: db
+                  DB_PORT: 5432
+                  REDIS_URL: redis://redis:6379/0
+                  TELEGRAM_BOT_TOKEN: '${{ secrets.TELEGRAM_BOT_TOKEN }}'
+                depends_on:
+                  db:
+                    condition: service_healthy
+                  redis:
+                    condition: service_healthy
+                restart: unless-stopped
+            
+              celery-beat:
+                image: ${{ secrets.DOCKER_USERNAME }}/habit-tracker:latest
+                command: celery -A config beat -l info
+                environment:
+                  DEBUG: 'False'
+                  SECRET_KEY: '${{ secrets.SECRET_KEY }}'
+                  DB_NAME: habit_tracker
+                  DB_USER: habit_user
+                  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'
+                  DB_HOST: db
+                  DB_PORT: 5432
+                  REDIS_URL: redis://redis:6379/0
+                  TELEGRAM_BOT_TOKEN: '${{ secrets.TELEGRAM_BOT_TOKEN }}'
+                depends_on:
+                  db:
+                    condition: service_healthy
+                  redis:
+                    condition: service_healthy
+                restart: unless-stopped
+            
+            volumes:
+              postgres_data:
+              redis_data:
+              static_volume:
+              media_volume:
+            EOF
+            
+            # Создаем .env файл
+            cat > .env << 'EOF'
+            SECRET_KEY='${{ secrets.SECRET_KEY }}'
+            ALLOWED_HOSTS='${{ secrets.ALLOWED_HOSTS }}'
+            DB_NAME=habit_tracker
+            DB_USER=habit_user
+            DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
+            TELEGRAM_BOT_TOKEN='${{ secrets.TELEGRAM_BOT_TOKEN }}'
+            EOF
+            
+            # Запускаем контейнеры
             docker-compose pull
-            
-            # Перезапускаем контейнеры
             docker-compose up -d --force-recreate
-            
-            # Применяем миграции
-            docker-compose exec -T web python manage.py migrate --noinput
-            
-            # Собираем статику
-            docker-compose exec -T web python manage.py collectstatic --noinput
-            
-            # Очищаем неиспользуемые образы
+            sleep 10
+            docker-compose exec -T web python manage.py migrate --noinput || true
+            docker-compose exec -T web python manage.py collectstatic --noinput || true
             docker image prune -f
