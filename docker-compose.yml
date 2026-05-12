@@ -36,14 +36,12 @@ services:
   web:
     build: .
     container_name: homework8_web
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             python manage.py runserver 0.0.0.0:8000"
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4
     volumes:
-      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
     ports:
-      - "8000:8000"
+      - "8000"
     env_file:
       - .env
     depends_on:
@@ -103,9 +101,24 @@ services:
     networks:
       - homework8_network
 
+  nginx:
+    build: ./nginx
+    container_name: homework8_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - static_volume:/staticfiles
+      - media_volume:/media
+    depends_on:
+      - web
+    networks:
+      - homework8_network
+
 volumes:
   postgres_data:
   redis_data:
+  static_volume:
+  media_volume:
 
 networks:
   homework8_network:
